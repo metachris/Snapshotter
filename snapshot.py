@@ -8,18 +8,18 @@ from boto.s3.key import Key
 
 def snapshot(url_pivot, url_orig, fn, ext):
     print "Create screenshot of original"
-    system("/opt/wkhtmltoimage-amd64 %s '/tmp/%s-orig.%s'" % (url_orig, fn, ext))
+    system("/opt/wkhtmltoimage-amd64 --crop-h 1024 %s '/tmp/%s-orig.%s'" % (url_orig, fn, ext))
     print "- Create thumbnail"
-    system("convert -resize 133x100 '/tmp/%s.%s' '/tmp/%s-orig_thumb.%s'" % (fn, ext, fn, ext))
+    system("convert -resize 128x128 '/tmp/%s-orig.%s' '/tmp/%s-orig_thumb.%s'" % (fn, ext, fn, ext))
     print "- Minify screenshot"
-    system("mogrify -resize 1024x769 '/tmp/%s-orig.%s'" % (fn, ext))
+    system("mogrify -resize 1024x1024 '/tmp/%s-orig.%s'" % (fn, ext))
 
     print "Create screenshot of pivot"
-    system("/opt/wkhtmltoimage-amd64 %s '/tmp/%s.%s'" % (url_pivot, fn, ext))
+    system("/opt/wkhtmltoimage-amd64 --crop-h 1024 %s '/tmp/%s.%s'" % (url_pivot, fn, ext))
     print "- Create thumbnail"
-    system("convert -resize 133x100 '/tmp/%s.%s' '/tmp/%s_thumb.%s'" % (fn, ext, fn, ext))
+    system("convert -resize 128x128 '/tmp/%s.%s' '/tmp/%s_thumb.%s'" % (fn, ext, fn, ext))
     print "- Minify screenshot"
-    system("mogrify -resize 1024x769 '/tmp/%s.%s'" % (fn, ext))
+    system("mogrify -resize 1024x1024 '/tmp/%s.%s'" % (fn, ext))
 
     print "Copy into s3"
     conn = S3Connection()
@@ -41,6 +41,10 @@ def snapshot(url_pivot, url_orig, fn, ext):
     k.key = "%s-orig_thumb.%s" % (fn, ext)
     k.set_contents_from_filename("/tmp/%s-orig_thumb.%s" % (fn, ext))
 
+    system("rm /tmp/%s.%s" % (fn, ext))
+    system("rm /tmp/%s_thumb.%s" % (fn, ext))
+    system("rm /tmp/%s-orig.%s" % (fn, ext))
+    system("rm /tmp/%s-orig_thumb.%s" % (fn, ext))
 
 if __name__ == "__main__":
     if len(argv) < 5:
